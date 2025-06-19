@@ -1,0 +1,18 @@
+.events-container {
+  max-width: 1200px;
+  margin: auto;
+  padding: 24px;
+}
+
+.events-heading {
+  font-size: 28px;
+  margin-bottom: 24px;
+  color: #222;
+  text-align: center;
+}
+
+.events-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+}

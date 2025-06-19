@@ -1,0 +1,14 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "backend for user side in this ticket buying and selling ecosystem",
+  "main": "index.js",
+  "scripts": {
+    "test": "dev"
+  },
+  "keywords": [
+    "userbackend"
+  ],
+  "author": "Mayank Raj",
+  "license": "ISC"
+}
