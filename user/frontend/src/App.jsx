@@ -18,7 +18,7 @@ function App() {
         <Route path="/events/:id" element={<EventDetails />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
+        <Route path="/register" element={<Signup />} />
         <Route path="*" element={<h2 style={{ padding: "24px" }}>404 - Page Not Found</h2>} />
       </Routes>
       <Footer />

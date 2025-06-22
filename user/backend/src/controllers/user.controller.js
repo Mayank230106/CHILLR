@@ -23,8 +23,7 @@ const generateRefreshAndAccessTokens = async(userID) =>
     }
 }
 
-const registerUser = asyncHandler( async(req,res) => {
-    //trying to register user here
+//trying to register user here
 
     //how about, first we get the inputs somehow from frontend
     //with axios get that data in backend, maybe??
@@ -37,6 +36,11 @@ const registerUser = asyncHandler( async(req,res) => {
     // remove password and refresh token from response
     // check for user creation
     // return res
+
+const registerUser = asyncHandler( async(req,res) => {
+    
+
+    console.log("register user called")
 
     const {fullname, email, username, password} = req.body
 
@@ -58,15 +62,11 @@ const registerUser = asyncHandler( async(req,res) => {
         throw new ApiError(409, "user with username or email already exists")
     }
 
-    const avatarLocalPath = req.files?.avatar[0]?.path;
+    console.log("req.file:", req.file); 
+
+    const avatarLocalPath = req.file?.path;
     //const coverImageLocalPath = req.files?.coverImage[0]?.path;
 
-    let coverImageLocalPath;
-
-    if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0)
-    {
-        coverImageLocalPath = req.files.coverImage[0].path
-    }
 
     if(!avatarLocalPath)
     {
@@ -74,7 +74,6 @@ const registerUser = asyncHandler( async(req,res) => {
     }
 
     const avatar = await uploadOnCloudinary(avatarLocalPath)
-    const coverImage = await uploadOnCloudinary(coverImageLocalPath)
 
     if(!avatar)
     {
@@ -84,7 +83,6 @@ const registerUser = asyncHandler( async(req,res) => {
     const user = await User.create({
         fullname,
         avatar: avatar.url,
-        coverImage: coverImage?.url || "",
         email,
         password,
         username

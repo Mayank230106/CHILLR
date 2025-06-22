@@ -27,12 +27,6 @@ const userSchema = new Schema({
         type: String, //cloudinary url
         required: true,
     },
-    ticketHistory: [
-        {
-            type: Schema.Types.ObjectID,
-            ref: "Video"
-        }
-    ],
     password: {
         type: String,
         required: [true, 'Password is required']
