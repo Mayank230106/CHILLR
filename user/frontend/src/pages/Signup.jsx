@@ -42,6 +42,7 @@ export default function Register() {
       // Save user info to localStorage
       if (res.data && res.data.data) {
         localStorage.setItem("user", JSON.stringify(res.data.data));
+        window.dispatchEvent(new Event("user-auth-changed"));
       }
       // Redirect to cart
       navigate("/cart");

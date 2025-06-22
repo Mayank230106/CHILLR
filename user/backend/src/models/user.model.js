@@ -27,6 +27,26 @@ const userSchema = new Schema({
         type: String, //cloudinary url
         required: true,
     },
+    bookings: [{
+    eventId: {
+      type: Schema.Types.ObjectId,
+      ref: "Event",
+      required: true
+    },
+    ticketsCount: {
+      type: Number,
+      required: true
+    },
+    bookingDate: {
+      type: Date,
+      default: Date.now
+    },
+    status: {
+      type: String,
+      enum: ['confirmed', 'cancelled', 'pending'],
+      default: 'confirmed'
+    }
+    }],
     password: {
         type: String,
         required: [true, 'Password is required']
