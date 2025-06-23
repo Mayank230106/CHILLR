@@ -7,6 +7,7 @@ import EventDetails from "./pages/EventDetails";
 import Cart from "./pages/Cart";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import Bookings from "./pages/Bookings";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/cart" element={<Cart />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Signup />} />
+        <Route path="/bookings" element={<Bookings />} />
         <Route path="*" element={<h2 style={{ padding: "24px" }}>404 - Page Not Found</h2>} />
       </Routes>
       <Footer />
