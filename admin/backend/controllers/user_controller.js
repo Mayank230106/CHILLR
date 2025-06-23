@@ -1,42 +1,45 @@
-// controllers/authController.js
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import Client from "../models/client.js";
 
-const createToken = (userId) => {
-  return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
+// Token generator
+const createToken = (clientId) => {
+  return jwt.sign({ id: clientId }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || "1d",
   });
 };
 
+// ✅ Signup Controller
 export const signup = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password } = req.body;
 
-    // 1. Check email uniqueness
-    if (await User.findOne({ email })) {
+    // Validate required fields
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "Name, email, and password are required" });
+    }
+
+    // Check uniqueness
+    const existingClient = await Client.findOne({ email });
+    if (existingClient) {
       return res.status(400).json({ message: "Email already in use" });
     }
 
-    // 2. Hash password
+    // Hash password
     const salt = await bcrypt.genSalt(10);
     const hash = await bcrypt.hash(password, salt);
 
-    // 3. Create user
-    const client = await Client.create({
-      name,
-      email,
-      password: hash,
-      role,
-    });
+    // Create client
+    const client = await Client.create({ name, email, password: hash });
 
-    const token = createToken(user._id);
+    // Generate token
+    const token = createToken(client._id);
+
     res.status(201).json({
       user: {
         id: client._id,
         name: client.name,
         email: client.email,
-        role: client.role,
       },
       token,
     });
@@ -46,30 +49,35 @@ export const signup = async (req, res) => {
   }
 };
 
+// ✅ Login Controller
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // 1. Find user
-    const client = await Client.findOne({ email });
-    if (!user) {
+    // Validate required fields
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
+
+    // Find client and include password hash
+    const client = await Client.findOne({ email }).select("+password");
+    if (!client) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // 2. Compare password
-    const isMatch = await bcrypt.compare(password, user.password);
+    // Compare password
+    const isMatch = await bcrypt.compare(password, client.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // 3. Generate token and respond
-    const token = createToken(user._id);
+    // Generate token
+    const token = createToken(client._id);
     res.json({
       user: {
         id: client._id,
         name: client.name,
         email: client.email,
-        role: client.role,
       },
       token,
     });
@@ -77,4 +85,10 @@ export const login = async (req, res) => {
     console.error("Login error:", err);
     res.status(500).json({ message: "Server error" });
   }
+};
+
+// ✅ Logout Controller (stateless)
+export const logout = (req, res) => {
+  res.clearCookie('token'); // optional if using cookies
+  return res.json({ message: "Logged out successfully" });
 };

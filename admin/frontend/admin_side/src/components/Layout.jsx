@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import {
   Box, AppBar, Toolbar, Typography, Drawer,
   List, ListItem, ListItemIcon, ListItemText,
@@ -9,22 +9,24 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import HistoryIcon from '@mui/icons-material/History';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LogoutIcon from '@mui/icons-material/Logout';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { AuthContext } from '../../Context/AuthContext'; // ✅ Adjust the path as needed
 
 const drawerWidth = 240;
 
-// ✅ Higher Order Component pattern
 export const Layout = (Component) => {
   return function WrappedWithLayout(props) {
     const [mobileOpen, setMobileOpen] = React.useState(false);
+    const navigate = useNavigate();
+    const { logout } = useContext(AuthContext);
 
     const handleDrawerToggle = () => {
       setMobileOpen(!mobileOpen);
     };
 
     const handleLogout = () => {
-      // TODO: Add logout logic (e.g., clearing tokens, redirecting)
-      console.log('Logging out...');
+      logout();           // ✅ Calls the context logout (clears token/localStorage)
+      navigate('/login'); // ✅ Redirect to login page
     };
 
     const drawer = (
@@ -43,9 +45,9 @@ export const Layout = (Component) => {
             <ListItemIcon><HistoryIcon /></ListItemIcon>
             <ListItemText primary="History" />
           </ListItem>
-          <ListItem button component={Link} to="/settings">
+          <ListItem button component={Link} to="/profile">
             <ListItemIcon><SettingsIcon /></ListItemIcon>
-            <ListItemText primary="Settings" />
+            <ListItemText primary="Profile" />
           </ListItem>
         </List>
       </div>
@@ -54,8 +56,6 @@ export const Layout = (Component) => {
     return (
       <Box sx={{ display: 'flex' }}>
         <CssBaseline />
-        
-        {/* App Bar */}
         <AppBar
           position="fixed"
           sx={{
@@ -79,7 +79,7 @@ export const Layout = (Component) => {
               </Typography>
             </Box>
 
-            {/* Logout Icon Button */}
+            {/* ✅ Functional Logout Button */}
             <IconButton
               color="inherit"
               edge="end"
@@ -97,7 +97,6 @@ export const Layout = (Component) => {
           sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
           aria-label="mailbox folders"
         >
-          {/* Mobile Drawer */}
           <Drawer
             variant="temporary"
             open={mobileOpen}
@@ -111,7 +110,6 @@ export const Layout = (Component) => {
             {drawer}
           </Drawer>
 
-          {/* Desktop Drawer */}
           <Drawer
             variant="permanent"
             sx={{
@@ -124,7 +122,6 @@ export const Layout = (Component) => {
           </Drawer>
         </Box>
 
-        {/* Main Content */}
         <Box
           component="main"
           sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - ${drawerWidth}px)` } }}

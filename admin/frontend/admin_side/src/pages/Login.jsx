@@ -1,17 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
-  Box,
-  TextField,
-  Button,
-  Link,
-  Tabs,
-  Tab,
-  Paper,
-  Typography
+  Box, TextField, Button, Link, Tabs, Tab, Paper, Typography
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { AuthContext } from '../../Context/AuthContext.jsx';
+import { useNavigate } from 'react-router-dom';
 
-// Full viewport container with proper background
+// === Styled Components ===
+
 const FullPage = styled(Box)(({ theme }) => ({
   height: '100vh',
   width: '100vw',
@@ -21,10 +17,9 @@ const FullPage = styled(Box)(({ theme }) => ({
   backgroundColor: theme.palette.grey[100],
   padding: theme.spacing(2),
   boxSizing: 'border-box',
-  overflow: 'auto', // Allows scrolling if content is taller than viewport
+  overflow: 'auto',
 }));
 
-// Form container with better responsive sizing
 const FormWrapper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(4),
   width: '100%',
@@ -41,7 +36,6 @@ const FormWrapper = styled(Paper)(({ theme }) => ({
   },
 }));
 
-// Custom styled tabs
 const StyledTabs = styled(Tabs)(({ theme }) => ({
   marginBottom: theme.spacing(3),
   '& .MuiTabs-indicator': {
@@ -57,7 +51,6 @@ const StyledTabs = styled(Tabs)(({ theme }) => ({
   },
 }));
 
-// Custom styled button
 const StyledButton = styled(Button)(({ theme }) => ({
   marginTop: theme.spacing(3),
   marginBottom: theme.spacing(1.5),
@@ -72,7 +65,6 @@ const StyledButton = styled(Button)(({ theme }) => ({
   },
 }));
 
-// Custom TextField styling
 const StyledTextField = styled(TextField)(({ theme }) => ({
   marginBottom: theme.spacing(2),
   '& .MuiOutlinedInput-root': {
@@ -93,9 +85,14 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
   },
 }));
 
+// === Component ===
+
 const Login = () => {
-  const [tab, setTab] = useState(0);
+  const [tab, setTab] = useState(0); // 0 = Sign In, 1 = Sign Up
   const [form, setForm] = useState({ name: '', email: '', password: '' });
+
+  const { login, signup, loading, error } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   const handleTabChange = (_, newValue) => {
     setTab(newValue);
@@ -106,19 +103,28 @@ const Login = () => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (tab === 0) {
-      console.log('Logging in with', form);
-    } else {
-      console.log('Signing up with', form);
+    try {
+      if (tab === 0) {
+        await login({ email: form.email, password: form.password });
+      } else {
+        await signup({
+          name: form.name,
+          email: form.email,
+          password: form.password,
+          role: 'user',
+        });
+      }
+      navigate('/');
+    } catch (err) {
+      console.error('Auth error:', err);
     }
   };
 
   return (
     <FullPage>
       <FormWrapper elevation={6}>
-        {/* Header */}
         <Box textAlign="center" mb={3}>
           <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 700, color: 'primary.main' }}>
             Welcome
@@ -128,7 +134,6 @@ const Login = () => {
           </Typography>
         </Box>
 
-        {/* Tabs */}
         <StyledTabs
           value={tab}
           onChange={handleTabChange}
@@ -140,7 +145,6 @@ const Login = () => {
           <Tab label="Sign Up" />
         </StyledTabs>
 
-        {/* Form */}
         <Box component="form" noValidate onSubmit={handleSubmit}>
           {tab === 1 && (
             <StyledTextField
@@ -179,29 +183,36 @@ const Login = () => {
             required
           />
 
+          {error && (
+            <Typography color="error" variant="body2" sx={{ mb: 2 }}>
+              {error}
+            </Typography>
+          )}
+
           <StyledButton
             type="submit"
             fullWidth
             variant="contained"
             size="large"
+            disabled={loading}
           >
-            {tab === 0 ? 'Sign In' : 'Create Account'}
+            {loading ? 'Processing...' : tab === 0 ? 'Sign In' : 'Create Account'}
           </StyledButton>
 
           <Box textAlign="center" sx={{ mt: 2 }}>
-            <Link 
-              component="button" 
+            <Link
+              component="button"
               type="button"
               onClick={() => setTab(tab === 0 ? 1 : 0)}
-              sx={{ 
+              sx={{
                 textDecoration: 'none',
                 fontSize: '0.9rem',
                 fontWeight: 500,
                 '&:hover': { textDecoration: 'underline' }
               }}
             >
-              {tab === 0 
-                ? "Don't have an account? Sign up here" 
+              {tab === 0
+                ? "Don't have an account? Sign up here"
                 : "Already have an account? Sign in"
               }
             </Link>
