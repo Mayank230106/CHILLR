@@ -1,7 +1,7 @@
 // components/EventsDashboard.jsx
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import { Layout } from './Layout';
+import { Layout } from './Layout.jsx';
 import { 
   Box, 
   Typography, 

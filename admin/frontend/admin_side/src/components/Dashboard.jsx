@@ -1,5 +1,5 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+// src/pages/Dashboard.jsx
+import React, { useState } from 'react';
 import { Layout } from './Layout.jsx';
 import {
   Box,
@@ -9,34 +9,12 @@ import {
   Button,
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
-
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-} from 'chart.js';
 import { Bar, Line } from 'react-chartjs-2';
+import NewEventDialogue from '../pages/NewEventDialogue.jsx';
 
-// Register Chart.js modules
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
 
 const DashboardContent = () => {
-  const navigate = useNavigate();
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const barData = {
     labels: ['Concerts', 'Workshops', 'Conferences', 'Webinars', 'Theatre'],
@@ -72,15 +50,20 @@ const DashboardContent = () => {
     { label: 'New Attendees', value: 822 },
   ];
 
+  const handleSaveEvent = (newEvent) => {
+    // TODO: wire up to your API or state management
+    console.log('Saving event', newEvent);
+    setDialogOpen(false);
+  };
+
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h4">Event Sales Dashboard</Typography>
         <Button
           variant="contained"
-          color="primary"
           startIcon={<AddIcon />}
-          onClick={() => navigate('/events/new')} // Update this route if needed
+          onClick={() => setDialogOpen(true)}
         >
           Add Event
         </Button>
@@ -121,18 +104,24 @@ const DashboardContent = () => {
         <Line
           data={lineData}
           options={{
-            plugins: { title: { display: true, text: 'Monthly Revenue Trend' } },
+            plugins: {
+              title: { display: true, text: 'Monthly Revenue Trend' }
+            },
             scales: { y: { beginAtZero: true } },
           }}
         />
       </Box>
+
+      {/* Event Dialog */}
+      <NewEventDialogue
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        onSave={handleSaveEvent}
+      />
     </Box>
   );
 };
 
-// Export wrapped with Layout (Option 1)
-const Dashboard = () => (
-    <DashboardContent />
-);
+const Dashboard = () => <DashboardContent />;
 
 export default Layout(Dashboard);
