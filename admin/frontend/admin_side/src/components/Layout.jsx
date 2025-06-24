@@ -64,11 +64,23 @@ export const Layout = (Component) => {
       <Box sx={{ display: 'flex', height: '100vh' }}>
         <CssBaseline />
 
+        {/* AppBar */}
         <AppBar position="fixed" elevation={0}>
           <Toolbar sx={{ justifyContent: 'space-between' }}>
-            <Typography variant="h5" noWrap>
-              {navItems.find(i => i.path === location.pathname)?.text ?? 'MyApp'}
+            <Typography
+              variant="h6"
+              noWrap
+              sx={{
+                fontWeight: 700,
+                fontSize: { xs: '1.25rem', sm: '1.5rem' },
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                color: 'inherit',
+              }}
+            >
+              CHILLR
             </Typography>
+
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <Tooltip title="Notifications">
                 <IconButton color="inherit">
@@ -87,8 +99,9 @@ export const Layout = (Component) => {
           </Toolbar>
         </AppBar>
 
+        {/* Drawer */}
         <Drawer variant="permanent">
-          <Toolbar /> {/* pushes below AppBar */}
+          <Toolbar /> {/* pushes content below AppBar */}
           <Divider />
           <List>
             {navItems.map(item => (
@@ -122,24 +135,23 @@ export const Layout = (Component) => {
             ))}
           </List>
         </Drawer>
-<Box
-  component="main"
-  sx={{
-    position: 'absolute',
-    top: theme.mixins.toolbar.minHeight,   // sit below AppBar
-    left: DRAWER_WIDTH,                     // sit to the right of Drawer
-    right: 0,                               // stretch all the way to the right
-    bottom: 0,                              // stretch to bottom
-    overflow: 'auto',
-    p: 3,
-    boxSizing: 'border-box',
-  }}
->
-  <Component {...props} />
-</Box>
 
-
-
+        {/* Main Content */}
+        <Box
+          component="main"
+          sx={{
+            position: 'absolute',
+            top: theme.mixins.toolbar.minHeight,
+            left: DRAWER_WIDTH,
+            right: 0,
+            bottom: 0,
+            overflow: 'auto',
+            p: 3,
+            boxSizing: 'border-box',
+          }}
+        >
+          <Component {...props} />
+        </Box>
       </Box>
     );
   };
