@@ -26,7 +26,7 @@ const eventSchema = new mongoose.Schema(
 
     organizer: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User", // assuming you have a User model
+      ref: "Client",
     },
 
     tags: [
@@ -46,12 +46,19 @@ const eventSchema = new mongoose.Schema(
       type: String, // URL to event banner image
       default: "",
     },
+
+    // ── NEW ── numberOfTickets ──  
+    numberOfTickets: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
+    },
   },
   {
-    timestamps: true, // adds createdAt and updatedAt
+    timestamps: true,
   }
 );
 
 const Event = mongoose.model("Event", eventSchema);
-
 export default Event;

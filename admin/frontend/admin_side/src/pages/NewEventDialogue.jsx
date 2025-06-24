@@ -6,7 +6,7 @@ import {
   DialogActions,
   TextField,
   Button,
-  Grid
+  Grid,
 } from '@mui/material';
 import { EventContext } from '../../Context/EventContext.jsx';
 
@@ -19,23 +19,34 @@ const NewEventDialogue = ({ open, onClose }) => {
     location: '',
     date: '',
     tags: '',
-    bannerImage: ''
+    numberOfTickets: '',    // ← new field
   });
+  const [bannerImageFile, setBannerImageFile] = useState(null);
 
   const handleChange = (e) => {
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileChange = (e) => {
+    setBannerImageFile(e.target.files[0]);
   };
 
   const handleSubmit = async () => {
     try {
-      const payload = {
-        ...form,
-        tags: form.tags.split(',').map(tag => tag.trim()),
-        isPublished: true,
-        organizer: "663e0a7e760d0a03b3b5d278" // 🔁 TEMP: Replace with logged-in user ID
-      };
+      const formData = new FormData();
+      formData.append('title', form.title);
+      formData.append('description', form.description);
+      formData.append('location', form.location);
+      formData.append('date', form.date);
+      formData.append('tags', form.tags);
+      formData.append('isPublished', 'true');
+      formData.append('numberOfTickets', form.numberOfTickets || 0);  // ← append tickets
+      if (bannerImageFile) {
+        formData.append('bannerImage', bannerImageFile);
+      }
 
-      await addEvent(payload);
+      await addEvent(formData);
 
       setForm({
         title: '',
@@ -43,13 +54,12 @@ const NewEventDialogue = ({ open, onClose }) => {
         location: '',
         date: '',
         tags: '',
-        bannerImage: ''
+        numberOfTickets: '',
       });
-
+      setBannerImageFile(null);
       onClose();
     } catch (err) {
       console.error('Event creation failed:', err);
-      // Optional: Add UI feedback
     }
   };
 
@@ -101,7 +111,7 @@ const NewEventDialogue = ({ open, onClose }) => {
               placeholder="Online or Physical"
             />
           </Grid>
-          <Grid item xs={12}>
+          <Grid item xs={6}>
             <TextField
               label="Tags (comma-separated)"
               name="tags"
@@ -110,20 +120,40 @@ const NewEventDialogue = ({ open, onClose }) => {
               onChange={handleChange}
             />
           </Grid>
-          <Grid item xs={12}>
+          <Grid item xs={6}>
             <TextField
-              label="Banner Image URL"
-              name="bannerImage"
+              label="Number of Tickets"
+              name="numberOfTickets"
+              type="number"
               fullWidth
-              value={form.bannerImage}
+              InputProps={{ inputProps: { min: 0 } }}
+              value={form.numberOfTickets}
               onChange={handleChange}
             />
+          </Grid>
+          <Grid item xs={12}>
+            <Button variant="outlined" component="label" fullWidth>
+              Upload Banner Image
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={handleFileChange}
+              />
+            </Button>
+            {bannerImageFile && (
+              <div style={{ marginTop: '8px', fontSize: '0.9rem' }}>
+                📁 {bannerImageFile.name}
+              </div>
+            )}
           </Grid>
         </Grid>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" onClick={handleSubmit}>Save</Button>
+        <Button variant="contained" onClick={handleSubmit}>
+          Save
+        </Button>
       </DialogActions>
     </Dialog>
   );

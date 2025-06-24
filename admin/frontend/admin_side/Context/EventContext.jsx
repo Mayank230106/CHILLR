@@ -13,10 +13,7 @@ export const EventProvider = ({ children }) => {
 
   const api = axios.create({
     baseURL: 'http://localhost:3000/events',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { Authorization: `Bearer ${token}` },
   });
 
   const fetchEvents = async () => {
@@ -24,9 +21,7 @@ export const EventProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await axios.get(`http://localhost:3000/events/client/${user.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get(`/client/${user.id}`);
       setEvents(res.data);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch events');
@@ -38,9 +33,7 @@ export const EventProvider = ({ children }) => {
   const fetchDashboardStats = async () => {
     if (!token) return;
     try {
-      const res = await axios.get(`http://localhost:3000/events/stats`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get('/stats');
       setStats(res.data);
     } catch (err) {
       console.error('Error fetching dashboard stats:', err);
@@ -48,28 +41,46 @@ export const EventProvider = ({ children }) => {
     }
   };
 
-  const addEvent = async (form) => {
+  const addEvent = async (data) => {
     if (!user?.id) throw new Error('User not authenticated');
-    const payload = {
-      title: form.title,
-      description: form.description || '',
-      location: form.venue || 'Online',
-      date: form.date,
-      organizer: user.id,
-      tags: form.type ? [form.type.toLowerCase()] : [],
-      isPublished: true,
-      bannerImage: form.bannerImage || '',
-    };
-    const res = await api.post('/add', payload);
-    setEvents((prev) => [...prev, res.data]);
-    fetchDashboardStats(); // ✅ update stats
+    let res;
+
+    if (data instanceof FormData) {
+      data.append('organizer', user.id);
+      data.append('isPublished', 'true');
+      data.append('numberOfTickets', data.numberOfTickets ?? 0);
+
+      res = await axios.post(
+        'http://localhost:3000/events/add',
+        data,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    } else {
+      const payload = {
+        title: data.title,
+        description: data.description || '',
+        location: data.location || 'Online',
+        date: data.date,
+        organizer: user.id,
+        tags: Array.isArray(data.tags) ? data.tags : [],
+        isPublished: true,
+        bannerImage: data.bannerImage || '',
+        numberOfTickets: data.numberOfTickets ?? 0,
+      };
+      res = await api.post('/add', payload, {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    setEvents(prev => [...prev, res.data]);
+    fetchDashboardStats();
     return res.data;
   };
 
   const deleteEvent = async (id) => {
     await api.delete(`/${id}`);
-    setEvents((prev) => prev.filter((e) => e._id !== id));
-    fetchDashboardStats(); // ✅ update stats
+    setEvents(prev => prev.filter(e => e._id !== id));
+    fetchDashboardStats();
   };
 
   useEffect(() => {
@@ -80,7 +91,18 @@ export const EventProvider = ({ children }) => {
   }, [user, token]);
 
   return (
-    <EventContext.Provider value={{ events, stats, loading, error, fetchEvents, fetchDashboardStats, addEvent, deleteEvent }}>
+    <EventContext.Provider
+      value={{
+        events,
+        stats,
+        loading,
+        error,
+        fetchEvents,
+        fetchDashboardStats,
+        addEvent,
+        deleteEvent,
+      }}
+    >
       {children}
     </EventContext.Provider>
   );

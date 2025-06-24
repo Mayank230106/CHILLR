@@ -1,12 +1,11 @@
-// components/EventsDashboard.jsx
-import React from 'react';
+import React, { useContext, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Layout } from './Layout.jsx';
 import { 
-  Box, 
-  Typography, 
-  Grid, 
-  Paper, 
+  Box,
+  Typography,
+  Grid,
+  Paper,
   Card,
   CardContent,
   CardHeader,
@@ -18,7 +17,8 @@ import {
   TableHead,
   TableRow,
   Avatar,
-  LinearProgress
+  LinearProgress,
+  CardMedia
 } from '@mui/material';
 import {
   TrendingUp,
@@ -27,8 +27,8 @@ import {
   ConfirmationNumber,
   EventSeat
 } from '@mui/icons-material';
-
-// Chart.js imports
+import { Line, Pie, Bar } from 'react-chartjs-2';
+import { EventContext } from '../../Context/EventContext.jsx';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -41,7 +41,6 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { Line, Pie, Bar } from 'react-chartjs-2';
 
 // Register Chart.js modules
 ChartJS.register(
@@ -57,320 +56,185 @@ ChartJS.register(
 );
 
 const EventsDashboard = () => {
-  // Pull the :id param from the URL
   const { id } = useParams();
+  const { events, fetchEvents, loading } = useContext(EventContext);
 
-  // Mock event data
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  if (loading) return <Typography>Loading...</Typography>;
+
+  const event = events.find(e => e._id === id);
+  if (!event) return <Typography>Event not found.</Typography>;
+
+  // Header details
   const eventDetails = {
-    id: id,
-    name: 'Tech Conference 2024',
-    date: '2024-07-15',
-    venue: 'Convention Center, Mumbai',
-    status: 'Active',
-    description: 'Annual technology conference featuring industry leaders'
+    name: event.title,
+    date: event.date?.split('T')[0],
+    venue: event.location,
+    status: event.isPublished ? 'Published' : 'Draft',
+    description: event.description,
   };
 
-  // Key metrics data
+  // Metrics
   const metrics = [
     {
       title: 'Total Revenue',
-      value: '₹7,60,000',
+      value: event.revenue ? `₹${event.revenue}` : '₹0',
       icon: <AttachMoney />,
-      color: '#4caf50',
-      change: '+12%',
-      changeColor: 'success'
+      color: '#4caf50'
     },
     {
       title: 'Tickets Sold',
-      value: '950/1200',
+      value: event.ticketsSold ? `${event.ticketsSold}/${event.numberOfTickets}` : `0/${event.numberOfTickets}`,
       icon: <ConfirmationNumber />,
-      color: '#2196f3',
-      change: '+8%',
-      changeColor: 'success'
+      color: '#2196f3'
     },
     {
       title: 'Attendees',
-      value: '920',
+      value: event.attendees || 0,
       icon: <People />,
-      color: '#ff9800',
-      change: '+5%',
-      changeColor: 'success'
+      color: '#ff9800'
     },
     {
       title: 'Capacity Used',
-      value: '79%',
+      value: event.numberOfTickets ? `${Math.round((event.attendees || 0) / event.numberOfTickets * 100)}%` : '0%',
       icon: <EventSeat />,
-      color: '#9c27b0',
-      change: '+3%',
-      changeColor: 'success'
+      color: '#9c27b0'
     }
   ];
 
-  // Sample chart data
+  // Mock chart data (replace with real endpoint data if available)
   const salesOverTimeData = {
-    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
+    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
     datasets: [{
       label: 'Tickets Sold',
-      data: [150, 200, 300, 250, 200, 150],
-      borderColor: 'rgba(75,192,192,1)',
-      backgroundColor: 'rgba(75,192,192,0.2)',
-      fill: true,
+      data: [150, 200, 300, 250],
       tension: 0.4,
     }]
   };
 
   const revenueByCategoryData = {
-    labels: ['VIP', 'General', 'Student', 'Early Bird'],
+    labels: ['VIP', 'General', 'Student'],
     datasets: [{
-      label: 'Revenue (₹)',
-      data: [350000, 300000, 110000, 100000],
-      backgroundColor: [
-        'rgba(255, 99, 132, 0.8)',
-        'rgba(54, 162, 235, 0.8)',
-        'rgba(255, 206, 86, 0.8)',
-        'rgba(75, 192, 192, 0.8)'
-      ],
-      borderColor: [
-        'rgba(255, 99, 132, 1)',
-        'rgba(54, 162, 235, 1)',
-        'rgba(255, 206, 86, 1)',
-        'rgba(75, 192, 192, 1)'
-      ],
-      borderWidth: 1
+      label: 'Revenue',
+      data: [event.revenueVip || 0, event.revenueGeneral || 0, event.revenueStudent || 0],
     }]
   };
 
   const attendanceByDayData = {
     labels: ['Day 1', 'Day 2', 'Day 3'],
-    datasets: [{
-      label: 'Expected Attendance',
-      data: [400, 450, 300],
-      backgroundColor: 'rgba(54, 162, 235, 0.6)',
-    }, {
-      label: 'Actual Attendance',
-      data: [380, 420, 280],
-      backgroundColor: 'rgba(255, 99, 132, 0.6)',
-    }]
+    datasets: [
+      { label: 'Expected', data: [400,450,300] },
+      { label: 'Actual', data: [380,420,280] }
+    ]
   };
 
-  // Recent registrations data
-  const recentRegistrations = [
-    { name: 'Rajesh Kumar', email: 'rajesh@email.com', ticket: 'VIP', time: '2 hours ago' },
-    { name: 'Priya Sharma', email: 'priya@email.com', ticket: 'General', time: '3 hours ago' },
-    { name: 'Amit Patel', email: 'amit@email.com', ticket: 'Student', time: '5 hours ago' },
-    { name: 'Sneha Gupta', email: 'sneha@email.com', ticket: 'VIP', time: '6 hours ago' },
-    { name: 'Vikram Singh', email: 'vikram@email.com', ticket: 'General', time: '8 hours ago' },
-  ];
+  // Recent registrations mock
+  const recentRegs = event.recentRegistrations || [];
 
-  const getTicketChipColor = (ticket) => {
-    switch (ticket) {
+  const getChipColor = (ticket) => {
+    switch(ticket) {
       case 'VIP': return 'error';
       case 'General': return 'primary';
-      case 'Student': return 'warning';
       default: return 'default';
     }
   };
 
   return (
-      <Box sx={{ flexGrow: 1 }}>
-        {/* Header Section */}
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" gutterBottom>
-            {eventDetails.name}
-          </Typography>
-          <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-            Event ID: #{eventDetails.id} | {eventDetails.date} | {eventDetails.venue}
-          </Typography>
-          <Chip 
-            label={eventDetails.status} 
-            color="success" 
-            variant="outlined" 
-            sx={{ mt: 1 }}
-          />
-        </Box>
-
-        {/* Key Metrics Cards */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          {metrics.map((metric, index) => (
-            <Grid item xs={12} sm={6} md={3} key={index}>
-              <Card elevation={3}>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <Avatar sx={{ bgcolor: metric.color, mr: 2 }}>
-                      {metric.icon}
-                    </Avatar>
-                    <Box>
-                      <Typography variant="h5" component="div">
-                        {metric.value}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {metric.title}
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <TrendingUp fontSize="small" color={metric.changeColor} />
-                    <Typography 
-                      variant="body2" 
-                      color={`${metric.changeColor}.main`}
-                      sx={{ ml: 0.5 }}
-                    >
-                      {metric.change} from last week
-                    </Typography>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-
-        {/* Charts Section */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          {/* Sales Over Time */}
-          <Grid item xs={12} md={8}>
-            <Card elevation={3}>
-              <CardHeader title="Ticket Sales Over Time" />
-              <CardContent>
-                <Box sx={{ height: 300 }}>
-                  <Line
-                    data={salesOverTimeData}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      plugins: {
-                        legend: {
-                          position: 'top',
-                        },
-                      },
-                      scales: {
-                        y: {
-                          beginAtZero: true
-                        }
-                      }
-                    }}
-                  />
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {/* Revenue Distribution */}
-          <Grid item xs={12} md={4}>
-            <Card elevation={3}>
-              <CardHeader title="Revenue by Category" />
-              <CardContent>
-                <Box sx={{ height: 300 }}>
-                  <Pie
-                    data={revenueByCategoryData}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      plugins: {
-                        legend: {
-                          position: 'bottom',
-                        },
-                      }
-                    }}
-                  />
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-
-        {/* Attendance Tracking */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} md={6}>
-            <Card elevation={3}>
-              <CardHeader title="Attendance by Day" />
-              <CardContent>
-                <Box sx={{ height: 300 }}>
-                  <Bar
-                    data={attendanceByDayData}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      plugins: {
-                        legend: {
-                          position: 'top',
-                        },
-                      },
-                      scales: {
-                        y: {
-                          beginAtZero: true
-                        }
-                      }
-                    }}
-                  />
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {/* Ticket Sales Progress */}
-          <Grid item xs={12} md={6}>
-            <Card elevation={3}>
-              <CardHeader title="Ticket Sales Progress" />
-              <CardContent>
-                <Box sx={{ mb: 3 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="body2">VIP (₹2000)</Typography>
-                    <Typography variant="body2">175/200</Typography>
-                  </Box>
-                  <LinearProgress variant="determinate" value={87.5} sx={{ mb: 2 }} />
-                  
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="body2">General (₹1000)</Typography>
-                    <Typography variant="body2">600/800</Typography>
-                  </Box>
-                  <LinearProgress variant="determinate" value={75} sx={{ mb: 2 }} />
-                  
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="body2">Student (₹500)</Typography>
-                    <Typography variant="body2">175/200</Typography>
-                  </Box>
-                  <LinearProgress variant="determinate" value={87.5} sx={{ mb: 2 }} />
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-
-        {/* Recent Registrations */}
-        <Card elevation={3}>
-          <CardHeader title="Recent Registrations" />
-          <CardContent>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Name</TableCell>
-                    <TableCell>Email</TableCell>
-                    <TableCell>Ticket Type</TableCell>
-                    <TableCell>Registration Time</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {recentRegistrations.map((registration, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{registration.name}</TableCell>
-                      <TableCell>{registration.email}</TableCell>
-                      <TableCell>
-                        <Chip 
-                          label={registration.ticket} 
-                          color={getTicketChipColor(registration.ticket)}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>{registration.time}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </CardContent>
-        </Card>
+    <Box sx={{ p: 3 }}>
+      {/* Header */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4">{eventDetails.name}</Typography>
+        <Typography variant="subtitle1" color="text.secondary">
+          ID: #{event._id} | {eventDetails.date} | {eventDetails.venue}
+        </Typography>
+        <Chip label={eventDetails.status} variant="outlined" color={event.isPublished ? 'success' : 'default'} sx={{ mt: 1 }} />
       </Box>
+
+      {/* Banner & Description */}
+      {event.bannerImage && (
+        <CardMedia component="img" height="200" image={event.bannerImage} alt="banner" sx={{ mb:4,borderRadius:2 }} />
+      )}
+      <Paper sx={{ p:2, mb:4 }}><Typography>{eventDetails.description}</Typography></Paper>
+
+      {/* Metrics */}
+      <Grid container spacing={3} sx={{ mb:4 }}>
+        {metrics.map((m,i) => (
+          <Grid item xs={12} sm={6} md={3} key={i}>
+            <Card>
+              <CardContent sx={{ display:'flex', alignItems:'center' }}>
+                <Avatar sx={{ bgcolor:m.color, mr:2 }}>{m.icon}</Avatar>
+                <Box>
+                  <Typography variant="h6">{m.value}</Typography>
+                  <Typography variant="body2" color="text.secondary">{m.title}</Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+
+      {/* Charts */}
+      <Grid container spacing={3} sx={{ mb:4 }}>
+        <Grid item xs={12} md={8}>
+          <Card><CardHeader title="Ticket Sales Over Time" />
+            <CardContent><Line data={salesOverTimeData} options={{ maintainAspectRatio:false }} /></CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <Card><CardHeader title="Revenue by Category" />
+            <CardContent><Pie data={revenueByCategoryData} options={{ maintainAspectRatio:false }} /></CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      <Grid container spacing={3} sx={{ mb:4 }}>
+        <Grid item xs={12} md={6}>
+          <Card><CardHeader title="Attendance by Day" />
+            <CardContent><Bar data={attendanceByDayData} options={{ maintainAspectRatio:false }} /></CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <Card><CardHeader title="Ticket Sales Progress" />
+            <CardContent>
+              <Box>
+                {['VIP','General','Student'].map((type,i) => (
+                  <Box key={i} sx={{ mb:2 }}>
+                    <Box sx={{ display:'flex', justifyContent:'space-between' }}>
+                      <Typography>{type}</Typography><Typography>{event[`${type.toLowerCase()}Sold`]} / {event.numberOfTickets}</Typography>
+                    </Box>
+                    <LinearProgress variant="determinate" value={ (event[`${type.toLowerCase()}Sold`]||0) / event.numberOfTickets *100 } />
+                  </Box>
+                ))}
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Recent Registrations */}
+      <Card>
+        <CardHeader title="Recent Registrations" />
+        <CardContent>
+          <TableContainer>
+            <Table><TableHead><TableRow>
+              <TableCell>Name</TableCell><TableCell>Ticket</TableCell><TableCell>Time</TableCell>
+            </TableRow></TableHead>
+            <TableBody>
+              {recentRegs.map((r,i)=>(
+                <TableRow key={i}>
+                  <TableCell>{r.name}</TableCell>
+                  <TableCell><Chip label={r.ticket} color={getChipColor(r.ticket)} size="small" /></TableCell>
+                  <TableCell>{r.time}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody></Table>
+          </TableContainer>
+        </CardContent>
+      </Card>
+    </Box>
   );
 };
 
