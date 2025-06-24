@@ -6,7 +6,8 @@ import {
   Grid,
   Paper,
   Button,
-  CircularProgress
+  CircularProgress,
+  useTheme,
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { Bar, Line } from 'react-chartjs-2';
@@ -16,6 +17,7 @@ import { EventContext } from '../../Context/EventContext.jsx';
 const DashboardContent = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { stats, loading, addEvent } = useContext(EventContext);
+  const theme = useTheme();
 
   const handleSaveEvent = async (newEvent) => {
     try {
@@ -31,9 +33,9 @@ const DashboardContent = () => {
     datasets: [
       {
         label: 'Tickets Sold',
-        data: [120, 95, 80, 45, 60], // placeholder until you have ticket model
-        backgroundColor: 'rgba(75, 192, 192, 0.5)',
-        borderColor: 'rgba(75, 192, 192, 1)',
+        data: [120, 95, 80, 45, 60],
+        backgroundColor: theme.palette.primary.light,
+        borderColor: theme.palette.primary.main,
         borderWidth: 1,
       },
     ],
@@ -44,11 +46,11 @@ const DashboardContent = () => {
     datasets: [
       {
         label: 'Revenue (₹)',
-        data: [10000, 18000, 22000, 19500, 25000, 31000], // placeholder until real revenue logic
+        data: [10000, 18000, 22000, 19500, 25000, 31000],
         fill: false,
         tension: 0.4,
-        borderColor: 'rgba(53, 162, 235, 0.8)',
-        pointBackgroundColor: 'rgba(53, 162, 235, 0.8)',
+        borderColor: theme.palette.secondary.main,
+        pointBackgroundColor: theme.palette.secondary.main,
       },
     ],
   };
@@ -61,27 +63,53 @@ const DashboardContent = () => {
   ];
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h4">Event Sales Dashboard</Typography>
+    <Box sx={{ flexGrow: 1, px: 4, py: 3 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          mb: 4,
+        }}
+      >
+        <Typography variant="h4" fontWeight="bold">
+          Event Sales Dashboard
+        </Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => setDialogOpen(true)}
+          sx={{ borderRadius: 2, px: 3 }}
         >
           Add Event
         </Button>
       </Box>
 
       {loading ? (
-        <CircularProgress />
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}>
+          <CircularProgress size={40} />
+        </Box>
       ) : (
         <>
-          <Grid container spacing={2} sx={{ mb: 4 }}>
+          <Grid container spacing={3} mb={5}>
             {keyStats.map((stat, i) => (
               <Grid item xs={12} sm={6} md={3} key={i}>
-                <Paper elevation={3} sx={{ p: 2, textAlign: 'center' }}>
-                  <Typography variant="h6" color="primary.main">
+                <Paper
+                  elevation={4}
+                  sx={{
+                    p: 3,
+                    borderRadius: 3,
+                    textAlign: 'center',
+                    transition: '0.3s',
+                    '&:hover': { boxShadow: 6 },
+                  }}
+                >
+                  <Typography
+                    variant="h5"
+                    fontWeight={600}
+                    color="primary.main"
+                    gutterBottom
+                  >
                     {stat.value}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
@@ -92,30 +120,60 @@ const DashboardContent = () => {
             ))}
           </Grid>
 
-          <Box sx={{ maxWidth: 800, mb: 4 }}>
-            <Bar
-              data={barData}
-              options={{
-                plugins: {
-                  title: { display: true, text: 'Tickets Sold by Event Type' },
-                  legend: { display: false },
-                },
-                scales: { y: { beginAtZero: true } },
-              }}
-            />
-          </Box>
+          <Grid container spacing={3} mb={5}>
+            <Grid item xs={12} md={6}>
+              <Paper
+                elevation={4}
+                sx={{
+                  p: 2,
+                  borderRadius: 3,
+                  height: 400,
+                }}
+              >
+                <Bar
+                  data={barData}
+                  options={{
+                    maintainAspectRatio: false,
+                    plugins: {
+                      title: {
+                        display: true,
+                        text: 'Tickets Sold by Event Type',
+                        font: { size: 18 },
+                      },
+                      legend: { display: false },
+                    },
+                    scales: { y: { beginAtZero: true } },
+                  }}
+                />
+              </Paper>
+            </Grid>
 
-          <Box sx={{ maxWidth: 800 }}>
-            <Line
-              data={lineData}
-              options={{
-                plugins: {
-                  title: { display: true, text: 'Monthly Revenue Trend' }
-                },
-                scales: { y: { beginAtZero: true } },
-              }}
-            />
-          </Box>
+            <Grid item xs={12} md={6}>
+              <Paper
+                elevation={4}
+                sx={{
+                  p: 2,
+                  borderRadius: 3,
+                  height: 400,
+                }}
+              >
+                <Line
+                  data={lineData}
+                  options={{
+                    maintainAspectRatio: false,
+                    plugins: {
+                      title: {
+                        display: true,
+                        text: 'Monthly Revenue Trend',
+                        font: { size: 18 },
+                      },
+                    },
+                    scales: { y: { beginAtZero: true } },
+                  }}
+                />
+              </Paper>
+            </Grid>
+          </Grid>
         </>
       )}
 
