@@ -21,7 +21,7 @@ export default function Login() {
       if (res.data && res.data.data && res.data.data.user) {
         localStorage.setItem("user", JSON.stringify(res.data.data.user));
         window.dispatchEvent(new Event("user-auth-changed"));
-        navigate("/cart");
+        navigate("/events");
       }
     } catch (err) {
       setMessage(

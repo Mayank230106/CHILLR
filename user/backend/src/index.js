@@ -7,7 +7,7 @@ dotenv.config({
 })
 
 import { app } from './app.js';
-
+import eventRoutes from "./routes/event.routes.js";
 
 connectDB()
 .then(() => {
@@ -18,3 +18,5 @@ connectDB()
 .catch((err) => {
     console.error("Error: ", err);
 })
+
+app.use("/api/v1/events", eventRoutes);

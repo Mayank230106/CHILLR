@@ -40,7 +40,9 @@ const generateRefreshAndAccessTokens = async(userID) =>
 const registerUser = asyncHandler( async(req,res) => {
     
 
-    console.log("register user called")
+    //console.log("register user called")
+
+    //console.log(req.body)
 
     const {fullname, email, username, password} = req.body
 
@@ -257,11 +259,57 @@ const getCurrentUser = asyncHandler( async(req,res) => {
     .json(200,req.user, "current user fetched successfully")
 })
 
+const bookEvent = asyncHandler(async (req, res) => {
+    const userId = req.user._id;
+    const { eventId, ticketsCount } = req.body;
+
+    // Validate ticketsCount is a positive integer
+    if (
+        !eventId ||
+        typeof ticketsCount !== "number" ||
+        !Number.isInteger(ticketsCount) ||
+        ticketsCount < 1
+    ) {
+        throw new ApiError(400, "Event ID and valid ticket count required");
+    }
+
+    const user = await User.findById(userId);
+
+    // Check if already booked and update count if so
+    const booking = user.bookings.find(b => b.eventId.toString() === eventId);
+    if (booking) {
+        booking.ticketsCount += ticketsCount;
+        booking.bookingDate = new Date(); // Optionally update booking date
+    } else {
+        user.bookings.push({
+            eventId,
+            ticketsCount,
+            bookingDate: new Date(),
+            status: "confirmed"
+        });
+    }
+    await user.save();
+
+    return res.status(200).json(new ApiResponse(200, user.bookings, "Event booked successfully"));
+});
+
+const getUserBookings = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id)
+        .populate("bookings.eventId")
+        .select("bookings");
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+    return res.status(200).json(new ApiResponse(200, user.bookings, "User bookings fetched"));
+});
+
 export {
     registerUser,
     loginUser,
     logoutUser,
     refreshAccessToken,
     changeCurrentPassword,
-    getCurrentUser
+    getCurrentUser,
+    bookEvent,
+    getUserBookings
 }

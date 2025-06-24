@@ -5,7 +5,9 @@ import {
     logoutUser, 
     refreshAccessToken,
     changeCurrentPassword,
-    getCurrentUser
+    getCurrentUser,
+    bookEvent,
+    getUserBookings
 } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -26,5 +28,7 @@ router.route("/refresh-token").post(refreshAccessToken)
 // Additional routes
 router.route("/profile").get(verifyJWT, getCurrentUser)
 router.route("/profile/password").put(verifyJWT, changeCurrentPassword)
+router.route("/bookings").post(verifyJWT, bookEvent);
+router.route("/bookings").get(verifyJWT, getUserBookings);
 
 export default router

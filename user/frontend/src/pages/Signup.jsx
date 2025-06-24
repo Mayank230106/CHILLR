@@ -45,7 +45,7 @@ export default function Register() {
         window.dispatchEvent(new Event("user-auth-changed"));
       }
       // Redirect to cart
-      navigate("/cart");
+      navigate("/events");
     } catch (err) {
       setMessage(
         err?.response?.data?.message ||
