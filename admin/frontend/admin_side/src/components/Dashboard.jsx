@@ -17,7 +17,12 @@ import { EventContext } from '../../Context/EventContext.jsx';
 
 const DashboardContent = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const { stats, categoryStats, loading, addEvent } = useContext(EventContext);
+  const {
+    stats,
+    categoryStats,
+    loading,
+    addEvent,
+  } = useContext(EventContext);
   const theme = useTheme();
 
   const handleSaveEvent = async (newEvent) => {
@@ -29,7 +34,7 @@ const DashboardContent = () => {
     }
   };
 
-  // Only keep entries where eventType is a non-null string
+  // Only keep valid eventType entries
   const filteredStats = categoryStats.filter(cs => typeof cs.eventType === 'string');
 
   const barData = {
@@ -70,14 +75,12 @@ const DashboardContent = () => {
 
   return (
     <Box sx={{ flexGrow: 1, px: 4, py: 3 }}>
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 4,
-        }}
-      >
+      <Box sx={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        mb: 4,
+      }}>
         <Typography variant="h4" fontWeight="bold">
           Event Sales Dashboard
         </Typography>
@@ -97,25 +100,18 @@ const DashboardContent = () => {
         </Box>
       ) : (
         <>
+          {/* KPI Cards */}
           <Grid container spacing={3} mb={5}>
             {keyStats.map((stat, i) => (
               <Grid item xs={12} sm={6} md={3} key={i}>
-                <Paper
-                  elevation={4}
-                  sx={{
-                    p: 3,
-                    borderRadius: 3,
-                    textAlign: 'center',
-                    transition: '0.3s',
-                    '&:hover': { boxShadow: 6 },
-                  }}
-                >
-                  <Typography
-                    variant="h5"
-                    fontWeight={600}
-                    color="primary.main"
-                    gutterBottom
-                  >
+                <Paper elevation={4} sx={{
+                  p: 3,
+                  borderRadius: 3,
+                  textAlign: 'center',
+                  transition: '0.3s',
+                  '&:hover': { boxShadow: 6 },
+                }}>
+                  <Typography variant="h5" fontWeight={600} color="primary.main" gutterBottom>
                     {stat.value}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
@@ -126,6 +122,7 @@ const DashboardContent = () => {
             ))}
           </Grid>
 
+          {/* Charts */}
           <Grid container spacing={3} mb={5}>
             <Grid item xs={12} md={6}>
               <Paper elevation={4} sx={{ p: 2, borderRadius: 3, height: 400 }}>
@@ -146,7 +143,6 @@ const DashboardContent = () => {
                 />
               </Paper>
             </Grid>
-
             <Grid item xs={12} md={6}>
               <Paper elevation={4} sx={{ p: 2, borderRadius: 3, height: 400 }}>
                 <Line

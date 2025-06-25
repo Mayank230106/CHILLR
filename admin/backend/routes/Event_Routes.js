@@ -6,7 +6,8 @@ import {
   DeleteEvent,
   getClientDashboardStats,
   getEvents,
-  getClientEventCategoryStats
+  getClientEventCategoryStats,
+  recordTicketSale        // ← import the new controller
 } from "../controllers/event_controller.js";
 
 const event_router = express.Router();
@@ -23,7 +24,11 @@ event_router.delete("/:id", DeleteEvent);
 // Stats endpoint (total events, tickets, etc.)
 event_router.get("/stats", getClientDashboardStats);
 
-// NEW: Get stats grouped by eventType (category)
+// Get stats grouped by eventType (category)
 event_router.get("/stats/categories", getClientEventCategoryStats);
+
+// 🔥 Record a ticket sale:
+//    POST /events/:id/sell   body: { count: <numberSold> }
+event_router.post("/:id/sell", recordTicketSale);
 
 export default event_router;

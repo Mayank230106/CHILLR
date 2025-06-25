@@ -54,6 +54,14 @@ const eventSchema = new mongoose.Schema(
       default: 0,
     },
 
+    // ── NEW ── ticketsSold ──
+    ticketsSold: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
+    },
+
     eventType: {
       type: String,
       enum: [

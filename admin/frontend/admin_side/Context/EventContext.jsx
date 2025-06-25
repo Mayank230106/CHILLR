@@ -63,11 +63,7 @@ export const EventProvider = ({ children }) => {
       data.append('numberOfTickets', data.numberOfTickets ?? 0);
       data.append('eventType', data.eventType);
 
-      res = await axios.post(
-        'http://localhost:3000/events/add',
-        data,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      res = await api.post('/add', data);
     } else {
       const payload = {
         title: data.title,
@@ -81,22 +77,29 @@ export const EventProvider = ({ children }) => {
         numberOfTickets: data.numberOfTickets ?? 0,
         eventType: data.eventType,
       };
-      res = await api.post('/add', payload, {
-        headers: { 'Content-Type': 'application/json' },
-      });
+      res = await api.post('/add', payload);
     }
 
     setEvents(prev => [...prev, res.data]);
-    fetchDashboardStats();
-    fetchCategoryStats();
+    await Promise.all([fetchDashboardStats(), fetchCategoryStats()]);
     return res.data;
   };
 
   const deleteEvent = async (id) => {
     await api.delete(`/${id}`);
     setEvents(prev => prev.filter(e => e._id !== id));
-    fetchDashboardStats();
-    fetchCategoryStats();
+    await Promise.all([fetchDashboardStats(), fetchCategoryStats()]);
+  };
+
+  // ← NEW: recordSale
+  const recordSale = async (eventId, count = 1) => {
+    const res = await api.post(`/${eventId}/sell`, { count });
+    // update the specific event in list
+    setEvents(evts =>
+      evts.map(e => (e._id === eventId ? res.data : e))
+    );
+    await Promise.all([fetchDashboardStats(), fetchCategoryStats()]);
+    return res.data;
   };
 
   useEffect(() => {
@@ -120,6 +123,7 @@ export const EventProvider = ({ children }) => {
         fetchCategoryStats,
         addEvent,
         deleteEvent,
+        recordSale,       // ← expose recordSale
       }}
     >
       {children}

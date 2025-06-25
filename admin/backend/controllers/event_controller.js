@@ -19,7 +19,6 @@ const getUserIdFromHeader = (req) => {
 // Add new event
 export const addEvent = async (req, res) => {
   try {
-    // Destructure, including eventType
     let {
       title,
       description = '',
@@ -32,11 +31,8 @@ export const addEvent = async (req, res) => {
     } = req.body;
 
     // Normalize array -> single string
-    if (Array.isArray(eventType)) {
-      eventType = eventType[0];
-    }
+    if (Array.isArray(eventType)) eventType = eventType[0];
 
-    // Validate required
     if (!title || !date || !eventType) {
       return res.status(400).json({ message: "title, date, and eventType are required." });
     }
@@ -62,7 +58,6 @@ export const addEvent = async (req, res) => {
       bannerImageUrl = result.secure_url;
     }
 
-    // Build & save
     const organizer = getUserIdFromHeader(req);
     const event = new Event({
       title,
@@ -72,9 +67,10 @@ export const addEvent = async (req, res) => {
       tags,
       isPublished: isPublished === 'true',
       numberOfTickets: parseInt(numberOfTickets, 10),
+      ticketsSold: 0,                  // initialize to zero
       organizer,
       bannerImage: bannerImageUrl,
-      eventType,  // now always a string
+      eventType,
     });
 
     const savedEvent = await event.save();
@@ -87,6 +83,34 @@ export const addEvent = async (req, res) => {
                   : err.name === 'JsonWebTokenError'  ? 401
                   : 500;
     return res.status(status).json({ message: err.message });
+  }
+};
+
+// Record ticket sale: decrement available, increment sold
+export const recordTicketSale = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const soldCount = parseInt(req.body.count, 10) || 1;
+
+    const updated = await Event.findOneAndUpdate(
+      { _id: id, numberOfTickets: { $gte: soldCount } },
+      {
+        $inc: {
+          numberOfTickets: -soldCount,
+          ticketsSold: soldCount,
+        }
+      },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(400).json({ message: 'Not enough tickets available' });
+    }
+    return res.json(updated);
+
+  } catch (err) {
+    console.error("recordTicketSale error:", err);
+    return res.status(500).json({ message: err.message });
   }
 };
 
@@ -122,14 +146,21 @@ export const getEvents = async (req, res) => {
   }
 };
 
-// Dashboard stats for client
+// Dashboard stats for client (includes totalTicketsSold)
 export const getClientDashboardStats = async (req, res) => {
   try {
     const clientId = getUserIdFromHeader(req);
     const totalEvents = await Event.countDocuments({ organizer: clientId });
+
+    const soldAgg = await Event.aggregate([
+      { $match: { organizer: new mongoose.Types.ObjectId(clientId) } },
+      { $group: { _id: null, totalSold: { $sum: "$ticketsSold" } } }
+    ]);
+    const totalTicketsSold = soldAgg[0]?.totalSold || 0;
+
     return res.json({
       totalEvents,
-      totalTicketsSold: 0,
+      totalTicketsSold,
       revenue: 0,
       newAttendees: 0,
     });
@@ -139,7 +170,8 @@ export const getClientDashboardStats = async (req, res) => {
   }
 };
 
-// New: Get event counts grouped by eventType
+
+// Get event counts grouped by eventType
 export const getClientEventCategoryStats = async (req, res) => {
   try {
     const clientId = getUserIdFromHeader(req);
