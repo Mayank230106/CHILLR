@@ -47,6 +47,17 @@ const userSchema = new Schema({
       default: 'confirmed'
     }
     }],
+    cart: [{
+        eventId: {
+            type: Schema.Types.ObjectId,
+            ref: "Event",
+            required: true
+        },
+        addedAt: {
+            type: Date,
+            default: Date.now
+        }
+    }],
     password: {
         type: String,
         required: [true, 'Password is required']

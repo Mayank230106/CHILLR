@@ -54,7 +54,7 @@ export default function Events() {
           }}
         >
           {events.map((e) => (
-            <EventCard key={e._id} event={e} />
+            <EventCard key={e._id} event={e} showDetailsButton={true} />
           ))}
         </div>
       )}

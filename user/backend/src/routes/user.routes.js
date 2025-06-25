@@ -7,7 +7,10 @@ import {
     changeCurrentPassword,
     getCurrentUser,
     bookEvent,
-    getUserBookings
+    getUserBookings,
+    getUserCart,
+    removeFromCart,
+    addToCart
 } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -30,5 +33,10 @@ router.route("/profile").get(verifyJWT, getCurrentUser)
 router.route("/profile/password").put(verifyJWT, changeCurrentPassword)
 router.route("/bookings").post(verifyJWT, bookEvent);
 router.route("/bookings").get(verifyJWT, getUserBookings);
+router.route("/cart")
+  .get(verifyJWT, getUserCart)
+  .post(verifyJWT, addToCart);
+
+router.route("/cart/:eventId").delete(verifyJWT, removeFromCart);
 
 export default router

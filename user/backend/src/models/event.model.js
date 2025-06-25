@@ -1,3 +1,4 @@
+// models/Event.js
 import mongoose from "mongoose";
 
 const eventSchema = new mongoose.Schema(
@@ -25,7 +26,7 @@ const eventSchema = new mongoose.Schema(
 
     organizer: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Client",
     },
 
     tags: [
@@ -44,6 +45,38 @@ const eventSchema = new mongoose.Schema(
     bannerImage: {
       type: String,
       default: "",
+    },
+
+    numberOfTickets: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
+    },
+
+    ticketsSold: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
+    },
+
+    eventType: {
+      type: String,
+      enum: [
+        "conference",
+        "workshop",
+        "webinar",
+        "meetup",
+        "seminar",
+        "networking",
+        "hackathon",
+        "competition",
+        "concert",
+        "festival",
+        "movie",
+      ],
+      required: true,
     },
   },
   {

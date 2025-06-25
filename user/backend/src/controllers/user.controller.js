@@ -1,6 +1,7 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js"
+import { Event } from "../models/event.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
@@ -273,13 +274,26 @@ const bookEvent = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Event ID and valid ticket count required");
     }
 
+    // Fetch event and check ticket availability
+    const event = await Event.findById(eventId);
+    if (!event) {
+        throw new ApiError(404, "Event not found");
+    }
+    if (event.ticketsSold + ticketsCount > event.numberOfTickets) {
+        throw new ApiError(400, "Not enough tickets available");
+    }
+
     const user = await User.findById(userId);
 
     // Check if already booked and update count if so
     const booking = user.bookings.find(b => b.eventId.toString() === eventId);
     if (booking) {
+        // Check again for update scenario
+        if (event.ticketsSold + ticketsCount > event.numberOfTickets) {
+            throw new ApiError(400, "Not enough tickets available");
+        }
         booking.ticketsCount += ticketsCount;
-        booking.bookingDate = new Date(); // Optionally update booking date
+        booking.bookingDate = new Date();
     } else {
         user.bookings.push({
             eventId,
@@ -288,6 +302,10 @@ const bookEvent = asyncHandler(async (req, res) => {
             status: "confirmed"
         });
     }
+
+    // Update ticketsSold in event
+    event.ticketsSold += ticketsCount;
+    await event.save();
     await user.save();
 
     return res.status(200).json(new ApiResponse(200, user.bookings, "Event booked successfully"));
@@ -303,6 +321,55 @@ const getUserBookings = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, user.bookings, "User bookings fetched"));
 });
 
+const getUserCart = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id)
+        .populate("cart.eventId")
+        .select("cart");
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+    return res.status(200).json(new ApiResponse(200, user.cart, "User cart fetched"));
+});
+
+const removeFromCart = asyncHandler(async (req, res) => {
+    const userId = req.user._id;
+    const { eventId } = req.params;
+    if (!eventId) {
+        throw new ApiError(400, "Event ID required");
+    }
+    const user = await User.findById(userId);
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+    const initialLength = user.cart.length;
+    user.cart = user.cart.filter(
+        (item) => item.eventId.toString() !== eventId
+    );
+    if (user.cart.length === initialLength) {
+        return res.status(404).json(new ApiResponse(404, user.cart, "Event not found in cart"));
+    }
+    await user.save();
+    return res.status(200).json(new ApiResponse(200, user.cart, "Event removed from cart"));
+});
+
+const addToCart = asyncHandler(async (req, res) => {
+    const userId = req.user._id;
+    const { eventId } = req.body;
+    if (!eventId) {
+        throw new ApiError(400, "Event ID required");
+    }
+    const user = await User.findById(userId);
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+    if (user.cart.some(item => item.eventId.toString() === eventId)) {
+        return res.status(200).json(new ApiResponse(200, user.cart, "Event already in cart"));
+    }
+    user.cart.push({ eventId });
+    await user.save();
+    return res.status(200).json(new ApiResponse(200, user.cart, "Event added to cart"));
+});
+
 export {
     registerUser,
     loginUser,
@@ -311,5 +378,8 @@ export {
     changeCurrentPassword,
     getCurrentUser,
     bookEvent,
-    getUserBookings
+    getUserBookings,
+    getUserCart,
+    removeFromCart,
+    addToCart
 }

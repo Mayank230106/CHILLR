@@ -65,34 +65,61 @@ export default function EventDetails() {
   }, [id]);
 
   useEffect(() => {
-    // Check if in cart
-    const cart = JSON.parse(localStorage.getItem("cart")) || [];
-    setInCart(cart.some(item => item._id === id));
+    // Check if in cart from backend
+    const fetchCart = async () => {
+      try {
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (!user) {
+          setInCart(false);
+          return;
+        }
+        const res = await axios.get("/api/v1/users/cart", {
+          withCredentials: true,
+          headers: { "Content-Type": "application/json" }
+        });
+        if (res.data && Array.isArray(res.data.data)) {
+          setInCart(res.data.data.some(item =>
+            (item.eventId?._id || item.eventId) === id
+          ));
+        } else {
+          setInCart(false);
+        }
+      } catch {
+        setInCart(false);
+      }
+    };
+    fetchCart();
   }, [id]);
 
-  const handleAddToCart = () => {
-    const cart = JSON.parse(localStorage.getItem("cart")) || [];
-    if (cart.some(item => item._id === event._id)) {
-      setMessage("Already in cart!");
-      return;
+  const handleAddToCart = async () => {
+    try {
+      await axios.post(
+        "/api/v1/users/cart",
+        { eventId: event._id },
+        { withCredentials: true, headers: { "Content-Type": "application/json" } }
+      );
+      setInCart(true);
+      setMessage("Added to cart!");
+    } catch (err) {
+      setMessage(
+        err?.response?.data?.message || "Failed to add to cart."
+      );
     }
-    cart.push({
-      _id: event._id,
-      title: event.title,
-      date: event.date,
-      bannerImage: event.bannerImage,
-    });
-    localStorage.setItem("cart", JSON.stringify(cart));
-    setInCart(true);
-    setMessage("Added to cart!");
   };
 
-  const handleRemoveFromCart = () => {
-    let cart = JSON.parse(localStorage.getItem("cart")) || [];
-    cart = cart.filter(item => item._id !== event._id);
-    localStorage.setItem("cart", JSON.stringify(cart));
-    setInCart(false);
-    setMessage("Removed from cart!");
+  const handleRemoveFromCart = async () => {
+    try {
+      await axios.delete(`/api/v1/users/cart/${event._id}`, {
+        withCredentials: true,
+        headers: { "Content-Type": "application/json" }
+      });
+      setInCart(false);
+      setMessage("Removed from cart!");
+    } catch (err) {
+      setMessage(
+        err?.response?.data?.message || "Failed to remove from cart."
+      );
+    }
   };
 
   const handleBuyTicket = async () => {
@@ -112,6 +139,18 @@ export default function EventDetails() {
       return;
     }
     const ticketsCount = Number(ticketsCountRaw);
+
+    // Check ticket availability before making API call
+    if (
+      event &&
+      typeof event.ticketsSold === "number" &&
+      typeof event.numberOfTickets === "number" &&
+      event.ticketsSold + ticketsCount > event.numberOfTickets
+    ) {
+      setMessage("These tickets are not available.");
+      return;
+    }
+
     setBookingLoading(true);
     setMessage("");
     try {
@@ -143,6 +182,11 @@ export default function EventDetails() {
             patchErr?.response?.data?.message || "Booking update failed. Please try again."
           );
         }
+      } else if (
+        err?.response?.data?.message &&
+        err.response.data.message.toLowerCase().includes("not available")
+      ) {
+        setMessage("These tickets are not available.");
       } else {
         setMessage(
           err?.response?.data?.message || "Booking failed. Please try again."
@@ -165,17 +209,38 @@ export default function EventDetails() {
       color: "#f3f6fa",
       boxShadow: "0 8px 40px 0 rgba(0,0,0,0.35)"
     }}>
-      <h2 style={{ marginBottom: "18px" }}>{event.title || "N/A"}</h2>
+      {/* Banner image as a wide banner */}
       {event.bannerImage ? (
-        <img src={event.bannerImage} alt={event.title} style={{ width: "100%", maxWidth: "500px", borderRadius: "12px", marginBottom: "18px" }} />
+        <div style={{
+          width: "100%",
+          maxWidth: "600px",
+          margin: "0 auto 24px auto",
+          borderRadius: "14px",
+          overflow: "hidden",
+          boxShadow: "0 4px 24px 0 rgba(0,0,0,0.18)"
+        }}>
+          <img
+            src={event.bannerImage}
+            alt={event.title}
+            style={{
+              width: "100%",
+              height: "220px",
+              objectFit: "cover",
+              display: "block"
+            }}
+          />
+        </div>
       ) : (
         <div style={{ marginBottom: "18px", color: "#a7bfe8" }}>No image available</div>
       )}
+      <h2 style={{ marginBottom: "18px" }}>{event.title || "N/A"}</h2>
+      <p><strong>Type:</strong> {event.eventType || "N/A"}</p>
       <p><strong>Date:</strong> {event.date ? new Date(event.date).toLocaleString() : "N/A"}</p>
       <p><strong>Location:</strong> {event.location || "N/A"}</p>
       <p><strong>Description:</strong> {event.description || "N/A"}</p>
       <p><strong>Tags:</strong> {event.tags && event.tags.length > 0 ? event.tags.join(", ") : "N/A"}</p>
       <p><strong>Organizer:</strong> {event.organizer || "N/A"}</p>
+      {/* Do NOT show ticketsSold or numberOfTickets */}
       {isBooked && (
         <div style={{ color: "#a7bfe8", margin: "12px 0" }}>
           Booked ({bookedTickets} ticket{bookedTickets > 1 ? "s" : ""})
@@ -244,5 +309,3 @@ export default function EventDetails() {
     </div>
   );
 }
-// No changes needed in this file. The frontend already sends booking requests and updates the ticket count.
-// Ensure the backend increments ticketsCount for existing bookings.

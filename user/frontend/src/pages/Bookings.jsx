@@ -114,6 +114,9 @@ export default function Bookings() {
                           <strong>Date:</strong> {b.eventId?.date ? new Date(b.eventId.date).toLocaleString() : "N/A"}
                         </div>
                         <div>
+                          <strong>Type:</strong> {b.eventId?.eventType || "N/A"}
+                        </div>
+                        <div>
                           <strong>Status:</strong> {b.status}
                         </div>
                       </div>
@@ -160,6 +163,15 @@ export default function Bookings() {
                         </div>
                         <div>
                           <strong>Date:</strong> {b.eventId?.date ? new Date(b.eventId.date).toLocaleString() : "N/A"}
+                        </div>
+                        <div>
+                          <strong>Type:</strong> {b.eventId?.eventType || "N/A"}
+                        </div>
+                        <div>
+                          <strong>Tickets Sold:</strong> {b.eventId?.ticketsSold ?? "N/A"}
+                        </div>
+                        <div>
+                          <strong>Total Tickets:</strong> {b.eventId?.numberOfTickets ?? "N/A"}
                         </div>
                       </div>
                     ))}
