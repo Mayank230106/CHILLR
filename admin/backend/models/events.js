@@ -47,12 +47,29 @@ const eventSchema = new mongoose.Schema(
       default: "",
     },
 
-    // ── NEW ── numberOfTickets ──  
     numberOfTickets: {
       type: Number,
       required: true,
       min: 0,
       default: 0,
+    },
+
+    eventType: {
+      type: String,
+      enum: [
+        "conference",
+        "workshop",
+        "webinar",
+        "meetup",
+        "seminar",
+        "networking",
+        "hackathon",
+        "competition",
+        "concert",
+        "festival",
+        "movie",
+      ],
+      required: true,
     },
   },
   {

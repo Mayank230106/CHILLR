@@ -1,4 +1,6 @@
+// controllers/eventController.js
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 import Event from "../models/events.js";
 import cloudinary from '../features/config.js';
 import { v4 as uuidv4 } from 'uuid';
@@ -17,23 +19,29 @@ const getUserIdFromHeader = (req) => {
 // Add new event
 export const addEvent = async (req, res) => {
   try {
-    // 1) Read text fields from multer’s req.body
-    const {
+    // Destructure, including eventType
+    let {
       title,
       description = '',
       location = 'Online',
       date,
       tags: rawTags,
       isPublished = 'false',
-      numberOfTickets = '0'
+      numberOfTickets = '0',
+      eventType,
     } = req.body;
 
-    // 2) Validate required
-    if (!title || !date) {
-      return res.status(400).json({ message: "title and date are required." });
+    // Normalize array -> single string
+    if (Array.isArray(eventType)) {
+      eventType = eventType[0];
     }
 
-    // 3) Parse tags (JSON array or comma string)
+    // Validate required
+    if (!title || !date || !eventType) {
+      return res.status(400).json({ message: "title, date, and eventType are required." });
+    }
+
+    // Parse tags
     let tags = [];
     if (rawTags) {
       try {
@@ -43,7 +51,7 @@ export const addEvent = async (req, res) => {
       }
     }
 
-    // 4) Upload bannerImage if present
+    // Upload banner image
     let bannerImageUrl = '';
     if (req.file?.buffer) {
       const dataUri = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
@@ -54,7 +62,7 @@ export const addEvent = async (req, res) => {
       bannerImageUrl = result.secure_url;
     }
 
-    // 5) Build + save
+    // Build & save
     const organizer = getUserIdFromHeader(req);
     const event = new Event({
       title,
@@ -66,6 +74,7 @@ export const addEvent = async (req, res) => {
       numberOfTickets: parseInt(numberOfTickets, 10),
       organizer,
       bannerImage: bannerImageUrl,
+      eventType,  // now always a string
     });
 
     const savedEvent = await event.save();
@@ -126,6 +135,39 @@ export const getClientDashboardStats = async (req, res) => {
     });
   } catch (err) {
     console.error("getClientDashboardStats error:", err);
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+// New: Get event counts grouped by eventType
+export const getClientEventCategoryStats = async (req, res) => {
+  try {
+    const clientId = getUserIdFromHeader(req);
+
+    const categoryStats = await Event.aggregate([
+      {
+        $match: {
+          organizer: new mongoose.Types.ObjectId(clientId),
+        },
+      },
+      {
+        $group: {
+          _id: "$eventType",
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          eventType: "$_id",
+          count: 1,
+        },
+      },
+    ]);
+
+    return res.json({ categoryStats });
+  } catch (err) {
+    console.error("getClientEventCategoryStats error:", err);
     return res.status(500).json({ message: err.message });
   }
 };

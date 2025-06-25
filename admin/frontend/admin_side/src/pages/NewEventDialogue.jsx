@@ -7,25 +7,41 @@ import {
   TextField,
   Button,
   Grid,
+  MenuItem,
+  CircularProgress,
+  Box,
 } from '@mui/material';
-import { EventContext } from '../../Context/EventContext.jsx';
 
-const NewEventDialogue = ({ open, onClose }) => {
-  const { addEvent } = useContext(EventContext);
+const eventTypes = [
+  'conference',
+  'workshop',
+  'webinar',
+  'meetup',
+  'seminar',
+  'networking',
+  'hackathon',
+  'competition',
+  'concert',
+  'festival',
+  'movie',
+];
 
+const NewEventDialogue = ({ open, onClose, onSave }) => {
   const [form, setForm] = useState({
     title: '',
     description: '',
     location: '',
     date: '',
     tags: '',
-    numberOfTickets: '',    // ← new field
+    numberOfTickets: '',
+    eventType: '',
   });
   const [bannerImageFile, setBannerImageFile] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm(prev => ({ ...prev, [name]: value }));
   };
 
   const handleFileChange = (e) => {
@@ -33,7 +49,9 @@ const NewEventDialogue = ({ open, onClose }) => {
   };
 
   const handleSubmit = async () => {
+    setSubmitting(true);
     try {
+      // Build formData
       const formData = new FormData();
       formData.append('title', form.title);
       formData.append('description', form.description);
@@ -41,13 +59,16 @@ const NewEventDialogue = ({ open, onClose }) => {
       formData.append('date', form.date);
       formData.append('tags', form.tags);
       formData.append('isPublished', 'true');
-      formData.append('numberOfTickets', form.numberOfTickets || 0);  // ← append tickets
-      if (bannerImageFile) {
-        formData.append('bannerImage', bannerImageFile);
+      formData.append('numberOfTickets', form.numberOfTickets || 0);
+      formData.append('eventType', form.eventType);
+      if (bannerImageFile) formData.append('bannerImage', bannerImageFile);
+
+      // **Only** call onSave (parent will call addEvent)
+      if (onSave) {
+        await onSave(formData);
       }
 
-      await addEvent(formData);
-
+      // reset and close
       setForm({
         title: '',
         description: '',
@@ -55,11 +76,14 @@ const NewEventDialogue = ({ open, onClose }) => {
         date: '',
         tags: '',
         numberOfTickets: '',
+        eventType: '',
       });
       setBannerImageFile(null);
       onClose();
     } catch (err) {
       console.error('Event creation failed:', err);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -68,71 +92,58 @@ const NewEventDialogue = ({ open, onClose }) => {
       <DialogTitle>Add New Event</DialogTitle>
       <DialogContent dividers>
         <Grid container spacing={2}>
-          <Grid item xs={12}>
+          {[
+            { label: 'Event Title', name: 'title', xs: 12 },
+            { label: 'Description', name: 'description', xs: 12, multiline: true, rows: 3 },
+            { label: 'Date', name: 'date', xs: 6, type: 'date', required: true },
+            { label: 'Location', name: 'location', xs: 6 },
+            { label: 'Tags (comma-separated)', name: 'tags', xs: 6 },
+            { label: 'Number of Tickets', name: 'numberOfTickets', xs: 6, type: 'number', inputProps: { min: 0 } },
+          ].map(field => (
+            <Grid item xs={field.xs} key={field.name}>
+              <TextField
+                fullWidth
+                label={field.label}
+                name={field.name}
+                type={field.type || 'text'}
+                value={form[field.name]}
+                onChange={handleChange}
+                required={field.required || false}
+                multiline={field.multiline || false}
+                rows={field.rows || undefined}
+                InputLabelProps={field.type === 'date' ? { shrink: true } : undefined}
+                InputProps={field.inputProps ? { inputProps: field.inputProps } : undefined}
+                disabled={submitting}
+              />
+            </Grid>
+          ))}
+
+          <Grid item xs={6}>
             <TextField
-              label="Event Title"
-              name="title"
+              select
               fullWidth
-              value={form.title}
+              label="Event Type"
+              name="eventType"
+              value={form.eventType}
               onChange={handleChange}
               required
-            />
+              disabled={submitting}
+            >
+              {eventTypes.map(type => (
+                <MenuItem key={type} value={type}>
+                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                </MenuItem>
+              ))}
+            </TextField>
           </Grid>
+
           <Grid item xs={12}>
-            <TextField
-              label="Description"
-              name="description"
+            <Button
+              variant="outlined"
+              component="label"
               fullWidth
-              multiline
-              rows={3}
-              value={form.description}
-              onChange={handleChange}
-            />
-          </Grid>
-          <Grid item xs={6}>
-            <TextField
-              label="Date"
-              name="date"
-              type="date"
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-              value={form.date}
-              onChange={handleChange}
-              required
-            />
-          </Grid>
-          <Grid item xs={6}>
-            <TextField
-              label="Location"
-              name="location"
-              fullWidth
-              value={form.location}
-              onChange={handleChange}
-              placeholder="Online or Physical"
-            />
-          </Grid>
-          <Grid item xs={6}>
-            <TextField
-              label="Tags (comma-separated)"
-              name="tags"
-              fullWidth
-              value={form.tags}
-              onChange={handleChange}
-            />
-          </Grid>
-          <Grid item xs={6}>
-            <TextField
-              label="Number of Tickets"
-              name="numberOfTickets"
-              type="number"
-              fullWidth
-              InputProps={{ inputProps: { min: 0 } }}
-              value={form.numberOfTickets}
-              onChange={handleChange}
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <Button variant="outlined" component="label" fullWidth>
+              disabled={submitting}
+            >
               Upload Banner Image
               <input
                 type="file"
@@ -142,17 +153,25 @@ const NewEventDialogue = ({ open, onClose }) => {
               />
             </Button>
             {bannerImageFile && (
-              <div style={{ marginTop: '8px', fontSize: '0.9rem' }}>
+              <Box mt={1} fontSize="0.9rem">
                 📁 {bannerImageFile.name}
-              </div>
+              </Box>
             )}
           </Grid>
         </Grid>
       </DialogContent>
+
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" onClick={handleSubmit}>
-          Save
+        <Button onClick={onClose} disabled={submitting}>
+          Cancel
+        </Button>
+        <Button
+          variant="contained"
+          onClick={handleSubmit}
+          disabled={submitting}
+          startIcon={submitting ? <CircularProgress size={20} /> : null}
+        >
+          {submitting ? 'Saving...' : 'Save'}
         </Button>
       </DialogActions>
     </Dialog>

@@ -8,6 +8,7 @@ export const EventProvider = ({ children }) => {
   const { user, token } = useContext(AuthContext);
   const [events, setEvents] = useState([]);
   const [stats, setStats] = useState(null);
+  const [categoryStats, setCategoryStats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -41,6 +42,17 @@ export const EventProvider = ({ children }) => {
     }
   };
 
+  const fetchCategoryStats = async () => {
+    if (!token) return;
+    try {
+      const res = await api.get('/stats/categories');
+      setCategoryStats(res.data.categoryStats || []);
+    } catch (err) {
+      console.error('Error fetching category stats:', err);
+      setCategoryStats([]);
+    }
+  };
+
   const addEvent = async (data) => {
     if (!user?.id) throw new Error('User not authenticated');
     let res;
@@ -49,6 +61,7 @@ export const EventProvider = ({ children }) => {
       data.append('organizer', user.id);
       data.append('isPublished', 'true');
       data.append('numberOfTickets', data.numberOfTickets ?? 0);
+      data.append('eventType', data.eventType);
 
       res = await axios.post(
         'http://localhost:3000/events/add',
@@ -66,6 +79,7 @@ export const EventProvider = ({ children }) => {
         isPublished: true,
         bannerImage: data.bannerImage || '',
         numberOfTickets: data.numberOfTickets ?? 0,
+        eventType: data.eventType,
       };
       res = await api.post('/add', payload, {
         headers: { 'Content-Type': 'application/json' },
@@ -74,6 +88,7 @@ export const EventProvider = ({ children }) => {
 
     setEvents(prev => [...prev, res.data]);
     fetchDashboardStats();
+    fetchCategoryStats();
     return res.data;
   };
 
@@ -81,12 +96,14 @@ export const EventProvider = ({ children }) => {
     await api.delete(`/${id}`);
     setEvents(prev => prev.filter(e => e._id !== id));
     fetchDashboardStats();
+    fetchCategoryStats();
   };
 
   useEffect(() => {
     if (user && token) {
       fetchEvents();
       fetchDashboardStats();
+      fetchCategoryStats();
     }
   }, [user, token]);
 
@@ -95,10 +112,12 @@ export const EventProvider = ({ children }) => {
       value={{
         events,
         stats,
+        categoryStats,
         loading,
         error,
         fetchEvents,
         fetchDashboardStats,
+        fetchCategoryStats,
         addEvent,
         deleteEvent,
       }}

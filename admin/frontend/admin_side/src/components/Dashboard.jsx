@@ -1,3 +1,4 @@
+// DashboardContent.jsx
 import React, { useState, useContext } from 'react';
 import { Layout } from './Layout.jsx';
 import {
@@ -16,7 +17,7 @@ import { EventContext } from '../../Context/EventContext.jsx';
 
 const DashboardContent = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const { stats, loading, addEvent } = useContext(EventContext);
+  const { stats, categoryStats, loading, addEvent } = useContext(EventContext);
   const theme = useTheme();
 
   const handleSaveEvent = async (newEvent) => {
@@ -28,12 +29,17 @@ const DashboardContent = () => {
     }
   };
 
+  // Only keep entries where eventType is a non-null string
+  const filteredStats = categoryStats.filter(cs => typeof cs.eventType === 'string');
+
   const barData = {
-    labels: ['Concerts', 'Workshops', 'Conferences', 'Webinars', 'Theatre'],
+    labels: filteredStats.map(cs =>
+      cs.eventType.charAt(0).toUpperCase() + cs.eventType.slice(1)
+    ),
     datasets: [
       {
-        label: 'Tickets Sold',
-        data: [120, 95, 80, 45, 60],
+        label: 'Event Count',
+        data: filteredStats.map(cs => cs.count),
         backgroundColor: theme.palette.primary.light,
         borderColor: theme.palette.primary.main,
         borderWidth: 1,
@@ -122,14 +128,7 @@ const DashboardContent = () => {
 
           <Grid container spacing={3} mb={5}>
             <Grid item xs={12} md={6}>
-              <Paper
-                elevation={4}
-                sx={{
-                  p: 2,
-                  borderRadius: 3,
-                  height: 400,
-                }}
-              >
+              <Paper elevation={4} sx={{ p: 2, borderRadius: 3, height: 400 }}>
                 <Bar
                   data={barData}
                   options={{
@@ -137,7 +136,7 @@ const DashboardContent = () => {
                     plugins: {
                       title: {
                         display: true,
-                        text: 'Tickets Sold by Event Type',
+                        text: 'Events by Category',
                         font: { size: 18 },
                       },
                       legend: { display: false },
@@ -149,14 +148,7 @@ const DashboardContent = () => {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <Paper
-                elevation={4}
-                sx={{
-                  p: 2,
-                  borderRadius: 3,
-                  height: 400,
-                }}
-              >
+              <Paper elevation={4} sx={{ p: 2, borderRadius: 3, height: 400 }}>
                 <Line
                   data={lineData}
                   options={{
@@ -187,5 +179,4 @@ const DashboardContent = () => {
 };
 
 const Dashboard = () => <DashboardContent />;
-
 export default Layout(Dashboard);
