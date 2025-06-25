@@ -65,7 +65,7 @@ export const addEvent = async (req, res) => {
       location,
       date,
       tags,
-      isPublished: isPublished === 'true',
+      isPublished:'true',
       numberOfTickets: parseInt(numberOfTickets, 10),
       ticketsSold: 0,                  // initialize to zero
       organizer,
